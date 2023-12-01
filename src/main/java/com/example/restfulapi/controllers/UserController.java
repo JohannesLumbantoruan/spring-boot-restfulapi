@@ -7,11 +7,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.example.restfulapi.entities.User;
 import com.example.restfulapi.models.RegisterUserRequest;
+import com.example.restfulapi.models.UpdateUserRequest;
 import com.example.restfulapi.models.UserResponse;
 import com.example.restfulapi.models.WebResponse;
 import com.example.restfulapi.repositories.UserRepository;
@@ -63,5 +65,14 @@ public class UserController {
             .<UserResponse>builder()
             .data(userResponse)
             .build();
+    }
+
+    @PutMapping("/api/users")
+    public WebResponse<UserResponse> updateUser(
+        User user, @RequestBody UpdateUserRequest request
+    ) {
+        UserResponse userResponse = userService.updateUser(user, request);
+
+        return WebResponse.<UserResponse>builder().data(userResponse).build();
     }
 }

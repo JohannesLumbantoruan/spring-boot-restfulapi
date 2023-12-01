@@ -11,10 +11,14 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.springframework.test.web.servlet.MockMvc.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+
+import javax.print.attribute.standard.Media;
+
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.*;
 
 import com.example.restfulapi.entities.User;
 import com.example.restfulapi.models.RegisterUserRequest;
+import com.example.restfulapi.models.UpdateUserRequest;
 import com.example.restfulapi.models.UserResponse;
 import com.example.restfulapi.models.WebResponse;
 import com.example.restfulapi.repositories.UserRepository;
@@ -193,6 +197,131 @@ public class UserControllerTest {
             get("/api/users/current")
                 .accept(MediaType.APPLICATION_JSON)
                 .header("X-API-TOKEN", user.getToken())
+        ).andExpectAll(
+            status().isUnauthorized()
+        ).andDo(result -> {
+            WebResponse<UserResponse> response = objectMapper.readValue(result.getResponse().getContentAsString(), new TypeReference<>() {
+            });
+
+            assertNotNull(response.getErrors());
+        });
+    }
+
+    @Test
+    void updateUserSuccess() throws Exception {
+        User user = new User();
+        user.setName("John Doe");
+        user.setUsername("johndoe");
+        user.setPassword("password");
+        user.setToken("token");
+        user.setTokenExpiredAt(System.currentTimeMillis() + (1000 * 60 * 24 * 30));
+
+        userRepository.save(user);
+
+        UpdateUserRequest request = new UpdateUserRequest();
+        request.setName("newname");
+        request.setPassword("newpassword");
+
+        mockMvc.perform(
+            put("/api/users")
+                .accept(MediaType.APPLICATION_JSON)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request))
+                .header("X-API-TOKEN", "token")
+        ).andExpectAll(
+            status().isOk()
+        ).andDo(result -> {
+            WebResponse<UserResponse> response = objectMapper.readValue(result.getResponse().getContentAsString(), new TypeReference<>() {
+            });
+
+            assertEquals(null, response.getErrors());
+            assertEquals("newname", response.getData().getName());
+        });
+    }
+
+    @Test
+    void updateUserFailedInvalidToken() throws Exception {
+        User user = new User();
+        user.setName("John Doe");
+        user.setUsername("johndoe");
+        user.setPassword("password");
+        user.setToken("token");
+        user.setTokenExpiredAt(System.currentTimeMillis() + (1000 * 60 * 24 * 30));
+
+        userRepository.save(user);
+
+        UpdateUserRequest request = new UpdateUserRequest();
+        request.setName("newname");
+        request.setPassword("newpassword");
+
+        mockMvc.perform(
+            put("/api/users")
+                .accept(MediaType.APPLICATION_JSON)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request))
+                .header("X-API-TOKEN", "invalidtoken")
+        ).andExpectAll(
+            status().isUnauthorized()
+        ).andDo(result -> {
+            WebResponse<UserResponse> response = objectMapper.readValue(result.getResponse().getContentAsString(), new TypeReference<>() {
+            });
+
+            assertNotNull(response.getErrors());
+            assertEquals(null, response.getData());
+        });
+    }
+
+    @Test
+    void updateUserFailedNoHeader() throws Exception {
+        User user = new User();
+        user.setName("John Doe");
+        user.setUsername("johndoe");
+        user.setPassword("password");
+        user.setToken("token");
+        user.setTokenExpiredAt(System.currentTimeMillis() + (1000 * 60 * 24 * 30));
+
+        userRepository.save(user);
+
+        UpdateUserRequest request = new UpdateUserRequest();
+        request.setName("newname");
+        request.setPassword("newpassword");
+
+        mockMvc.perform(
+            put("/api/users")
+                .accept(MediaType.APPLICATION_JSON)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request))
+        ).andExpectAll(
+            status().isUnauthorized()
+        ).andDo(result -> {
+            WebResponse<UserResponse> response = objectMapper.readValue(result.getResponse().getContentAsString(), new TypeReference<>() {
+            });
+
+            assertNotNull(response.getErrors());
+        });
+    }
+
+    @Test
+    void updateUserFailedTokenExpired() throws Exception {
+        User user = new User();
+        user.setName("John Doe");
+        user.setUsername("johndoe");
+        user.setPassword("password");
+        user.setToken("token");
+        user.setTokenExpiredAt(System.currentTimeMillis() - 1);
+
+        userRepository.save(user);
+
+        UpdateUserRequest request = new UpdateUserRequest();
+        request.setName("newname");
+        request.setPassword("newpassword");
+
+        mockMvc.perform(
+            put("/api/users")
+                .accept(MediaType.APPLICATION_JSON)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request))
+                .header("X-API-TOKEN", "token")
         ).andExpectAll(
             status().isUnauthorized()
         ).andDo(result -> {
