@@ -15,6 +15,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.
 
 import com.example.restfulapi.entities.User;
 import com.example.restfulapi.models.RegisterUserRequest;
+import com.example.restfulapi.models.UserResponse;
 import com.example.restfulapi.models.WebResponse;
 import com.example.restfulapi.repositories.UserRepository;
 import com.example.restfulapi.securities.BCrypt;
@@ -102,6 +103,101 @@ public class UserControllerTest {
             status().isBadRequest()
         ).andDo(result -> {
             WebResponse<String> response = objectMapper.readValue(result.getResponse().getContentAsString(), new TypeReference<>(){});
+
+            assertNotNull(response.getErrors());
+        });
+    }
+
+    @Test
+    void getUserUnauthorizedInvalidToken() throws Exception {
+        mockMvc.perform(
+            get("/api/users/current")
+                .accept(MediaType.APPLICATION_JSON)
+                .header("X-API-TOKEN", "a token")
+        ).andExpectAll(
+            status().isUnauthorized()
+        ).andDo(result -> {
+            WebResponse<String> response = objectMapper.readValue(result.getResponse().getContentAsString(), new TypeReference<>() {
+            });
+
+            assertNotNull(response.getErrors());
+        });
+    }
+
+    @Test
+    void getUserUnauthorizedEmptyToken() throws Exception {
+        mockMvc.perform(
+            get("/api/users/current")
+                .accept(MediaType.APPLICATION_JSON)
+                .header("X-API-TOKEN", "")
+        ).andExpectAll(
+            status().isUnauthorized()
+        ).andDo(result -> {
+            WebResponse<String> response = objectMapper.readValue(result.getResponse().getContentAsString(), new TypeReference<>() {
+            });
+
+            assertNotNull(response.getErrors());
+        });
+    }
+
+    @Test
+    void getUserUnauthorizedNoHeader() throws Exception {
+        mockMvc.perform(
+            get("/api/users/current")
+                .accept(MediaType.APPLICATION_JSON)
+        ).andExpectAll(
+            status().isUnauthorized()
+        ).andDo(result -> {
+            WebResponse<String> response = objectMapper.readValue(result.getResponse().getContentAsString(), new TypeReference<>() {
+            });
+
+            assertNotNull(response.getErrors());
+        });
+    }
+
+    @Test
+    void getUserSuccess() throws Exception {
+        User user = new User();
+        user.setName("John Doe");
+        user.setUsername("johndoe");
+        user.setPassword(BCrypt.hashpw("johndoe", BCrypt.gensalt()));
+        user.setTokenExpiredAt(System.currentTimeMillis() + (1000 * 60 * 24 * 30));
+        user.setToken("token");
+        userRepository.save(user);
+
+        mockMvc.perform(
+            get("/api/users/current")
+                .accept(MediaType.APPLICATION_JSON)
+                .header("X-API-TOKEN", user.getToken())
+        ).andExpectAll(
+            status().isOk()
+        ).andDo(result -> {
+            WebResponse<UserResponse> response = objectMapper.readValue(result.getResponse().getContentAsString(), new TypeReference<>() {
+            });
+
+            assertEquals(null, response.getErrors());
+        });
+    }
+
+    @Test
+    void getUserTokenExpired() throws Exception {
+        User user = new User();
+        user.setName("John Doe");
+        user.setUsername("johndoe");
+        user.setPassword(BCrypt.hashpw("johndoe", BCrypt.gensalt()));
+        user.setTokenExpiredAt(System.currentTimeMillis() - 1);
+        user.setToken("token");
+        userRepository.save(user);
+
+        mockMvc.perform(
+            get("/api/users/current")
+                .accept(MediaType.APPLICATION_JSON)
+                .header("X-API-TOKEN", user.getToken())
+        ).andExpectAll(
+            status().isUnauthorized()
+        ).andDo(result -> {
+            WebResponse<UserResponse> response = objectMapper.readValue(result.getResponse().getContentAsString(), new TypeReference<>() {
+            });
 
             assertNotNull(response.getErrors());
         });

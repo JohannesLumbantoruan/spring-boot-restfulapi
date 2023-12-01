@@ -54,4 +54,14 @@ public class UserController {
 
         return WebResponse.<List<UserResponse>>builder().data(userResponses).build();
     }
+
+    @GetMapping("/api/users/current")
+    public WebResponse<UserResponse> getUser(User user) {
+        UserResponse userResponse = userService.getUser(user);
+
+        return WebResponse
+            .<UserResponse>builder()
+            .data(userResponse)
+            .build();
+    }
 }
