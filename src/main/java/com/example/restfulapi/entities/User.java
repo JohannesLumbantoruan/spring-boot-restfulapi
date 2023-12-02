@@ -2,6 +2,8 @@ package com.example.restfulapi.entities;
 
 import java.util.List;
 
+import com.fasterxml.jackson.annotation.JsonManagedReference;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
@@ -34,5 +36,6 @@ public class User {
     private Long tokenExpiredAt;
 
     @OneToMany(mappedBy = "user")
+    @JsonManagedReference
     private List<Contact> contact;
 }
