@@ -32,7 +32,11 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 public class ContactControllerTest {
     private User user;
 
+    private User secondUser;
+
     private ContactRequest request;
+
+    private ContactRequest updateRequest;
 
     private Contact contact;
 
@@ -74,7 +78,23 @@ public class ContactControllerTest {
         contact.setFirstName("John");
         contact.setUser(user);
 
+        updateRequest = new ContactRequest();
+
+        updateRequest.setFirstName("Joe");
+        updateRequest.setLastName("Don");
+        updateRequest.setEmail("joedon@mail.com");
+        updateRequest.setPhone("+1-8347-8293-9999");
+
         contactRepository.save(contact);
+
+        secondUser = new User();
+        secondUser.setUsername("janedoe");
+        secondUser.setName("Jane Doe");
+        secondUser.setPassword("password");
+        secondUser.setToken("secondtoken");
+        secondUser.setTokenExpiredAt(System.currentTimeMillis() + (1000 * 60 * 24 * 30));
+
+        userRepository.save(secondUser);
     }
 
     @AfterEach
@@ -287,6 +307,116 @@ public class ContactControllerTest {
         ).andDo(result -> {
             WebResponse<Contact> response = objectMapper.readValue(result.getResponse().getContentAsString(), new TypeReference<>() {
             });
+
+            assertNotNull(response.getErrors());
+            assertNull(response.getData());
+        });
+    }
+
+    @Test
+    void updateSuccess() throws Exception {
+        mockMvc.perform(
+            patch("/api/contacts/" + contact.getId())
+                .accept(MediaType.APPLICATION_JSON)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(updateRequest))
+                .header("X-API-TOKEN", "token")
+        ).andExpectAll(
+            status().isOk()
+        ).andDo(result -> {
+            WebResponse<ContactResponse> response = objectMapper.readValue(
+                result.getResponse().getContentAsString(), new TypeReference<>() {
+            });
+
+            assertNull(response.getErrors());
+            assertEquals(updateRequest.getFirstName(), response.getData().getFirstName());
+            assertEquals(updateRequest.getLastName(), response.getData().getLastName());
+            assertEquals(updateRequest.getEmail(), response.getData().getEmail());
+            assertEquals(updateRequest.getPhone(), response.getData().getPhone());
+        });
+    }
+
+    @Test
+    void updateFailedFirstNameBlank() throws Exception {
+        updateRequest.setFirstName("");
+
+        mockMvc.perform(
+            patch("/api/contacts/" + contact.getId())
+                .accept(MediaType.APPLICATION_JSON)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(updateRequest))
+                .header("X-API-TOKEN", user.getToken())
+        ).andExpectAll(
+            status().isBadRequest()
+        ).andDo(result -> {
+            WebResponse<String> response = objectMapper.readValue(
+                result.getResponse().getContentAsString(),new TypeReference<>() {
+            });
+
+            assertNotNull(response.getErrors());
+            assertNull(response.getData());
+        });
+    }
+
+    @Test
+    void updateFailedNotFoundWrongToken() throws Exception {
+        mockMvc.perform(
+            patch("/api/contacts/" + contact.getId())
+                .accept(MediaType.APPLICATION_JSON)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(updateRequest))
+                .header("X-API-TOKEN", secondUser.getToken())
+        ).andExpectAll(
+            status().isNotFound()
+        ).andDo(result -> {
+            WebResponse<String> response = objectMapper.readValue(
+                result.getResponse().getContentAsString(), new TypeReference<>() {
+            });
+
+            assertNotNull(response.getErrors());
+            assertNull(response.getData());
+        });
+    }
+
+    @Test
+    void updateFailedNotFoundWrongContactId() throws Exception {
+        mockMvc.perform(
+            patch("/api/contacts/contact-23456")
+                .accept(MediaType.APPLICATION_JSON)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(updateRequest))
+                .header("X-API-TOKEN", user.getToken())
+        ).andExpectAll(
+            status().isNotFound()
+        ).andDo(result -> {
+            WebResponse<String> response = objectMapper.readValue(
+                result.getResponse().getContentAsString(), new TypeReference<>() {
+            });
+
+            assertNotNull(response.getErrors());
+            assertNull(response.getData());
+        });
+    }
+
+    @Test
+    void updateFailedTokenExpired() throws Exception {
+        user.setTokenExpiredAt(System.currentTimeMillis() - (1000 * 60 * 24 * 30));
+        userRepository.save(user);
+
+        mockMvc.perform(
+            patch("/api/contacts/" + contact.getId())
+                .accept(MediaType.APPLICATION_JSON)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(updateRequest))
+                .header("X-API-TOKEN", user.getToken())
+        ).andExpectAll(
+            status().isUnauthorized()
+        ).andDo(result -> {
+            WebResponse<String> response = objectMapper.readValue(
+                result.getResponse().getContentAsString(), new TypeReference<>() {
+            });
+
+            System.out.println(response.getErrors());
 
             assertNotNull(response.getErrors());
             assertNull(response.getData());
