@@ -50,6 +50,6 @@ public class Contact {
 
     private String email;
 
-    @OneToMany(mappedBy = "contact")
+    @OneToMany(mappedBy = "contact", cascade = CascadeType.ALL)
     private List<Address> address;
 }

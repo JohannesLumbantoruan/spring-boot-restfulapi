@@ -26,7 +26,7 @@ public class Address {
     @Id
     private String id;
 
-    @ManyToOne(cascade = CascadeType.ALL)
+    @ManyToOne()
     @JoinColumn(
         foreignKey = @ForeignKey(name = "fkey_addresses_contacts"),
         nullable = false,

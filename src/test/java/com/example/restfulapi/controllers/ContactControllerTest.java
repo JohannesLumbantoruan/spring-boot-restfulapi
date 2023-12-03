@@ -422,4 +422,23 @@ public class ContactControllerTest {
             assertNull(response.getData());
         });
     }
+
+    @Test
+    void deleteSuccess() throws Exception {
+        mockMvc.perform(
+            delete("/api/contacts/" + contact.getId())
+                .accept(MediaType.APPLICATION_JSON)
+                .header("X-API-TOKEN", user.getToken())
+        ).andExpectAll(
+            status().isOk()
+        ).andDo(result -> {
+            WebResponse<String> response = objectMapper.readValue(
+                result.getResponse().getContentAsString(), new TypeReference<>() {
+            });
+
+            assertNotNull(response.getData());
+            assertNull(response.getErrors());
+            assertEquals(response.getData(), "Ok");
+        });
+    }
 }
