@@ -1,10 +1,5 @@
 package com.example.restfulapi.controllers;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -16,11 +11,10 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.example.restfulapi.entities.Contact;
 import com.example.restfulapi.entities.User;
-import com.example.restfulapi.models.CreateContactRequest;
-import com.example.restfulapi.models.CreateContactResponse;
+import com.example.restfulapi.models.ContactRequest;
+import com.example.restfulapi.models.ContactResponse;
 import com.example.restfulapi.models.GetAllContactsResponse;
 import com.example.restfulapi.models.WebResponse;
-import com.example.restfulapi.repositories.ContactRepository;
 import com.example.restfulapi.services.ContactService;
 
 @RestController
@@ -28,21 +22,18 @@ public class ContactController {
     @Autowired
     private ContactService contactService;
 
-    @Autowired
-    private ContactRepository contactRepository;
-
     @PostMapping(
         path = "/api/contacts",
         consumes = MediaType.APPLICATION_JSON_VALUE,
         produces = MediaType.APPLICATION_JSON_VALUE
     )
-    public WebResponse<CreateContactResponse> createContact(
+    public WebResponse<ContactResponse> createContact(
         User user, 
-        @RequestBody CreateContactRequest request
+        @RequestBody ContactRequest request
     ) {
-        CreateContactResponse response = contactService.createContact(user, request);
+        ContactResponse response = contactService.createContact(user, request);
 
-        return WebResponse.<CreateContactResponse>builder().data(response).build();
+        return WebResponse.<ContactResponse>builder().data(response).build();
     }
 
     @GetMapping(
@@ -56,5 +47,18 @@ public class ContactController {
         GetAllContactsResponse response = contactService.get(user, pageNumber);
 
         return WebResponse.<GetAllContactsResponse>builder().data(response).build();
+    }
+
+    @GetMapping(
+        path = "/api/contacts/{contactId}",
+        produces = MediaType.APPLICATION_JSON_VALUE
+    )
+    public WebResponse<Contact> getContactById(
+        User user, 
+        @PathVariable(name = "contactId") String id
+    ) {
+        Contact response = contactService.getById(user, id);
+
+        return WebResponse.<Contact>builder().data(response).build();
     }
 }
