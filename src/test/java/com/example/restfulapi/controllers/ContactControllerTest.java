@@ -441,4 +441,78 @@ public class ContactControllerTest {
             assertEquals(response.getData(), "Ok");
         });
     }
+
+    @Test
+    void deleteFailedContactNotFound() throws Exception {
+        mockMvc.perform(
+            delete("/api/contacts/contact-23456")
+                .accept(MediaType.APPLICATION_JSON)
+                .header("X-API-TOKEN", user.getToken())
+        ).andExpectAll(
+            status().isNotFound()
+        ).andDo(result -> {
+            WebResponse<String> response = objectMapper.readValue(
+                result.getResponse().getContentAsString(), new TypeReference<>() {
+            });
+
+            assertNotNull(response.getErrors());
+            assertNull(response.getData());
+        });
+    }
+
+    @Test
+    void deleteFailedTokenExpired() throws Exception {
+        user.setTokenExpiredAt(System.currentTimeMillis() - (1000 * 60 * 24 * 30));
+        userRepository.save(user);
+
+        mockMvc.perform(
+            delete("/api/contacts/" + contact.getId())
+                .accept(MediaType.APPLICATION_JSON)
+                .header("X-API-TOKEN", user.getToken())
+        ).andExpectAll(
+            status().isUnauthorized()
+        ).andDo(result -> {
+            WebResponse<String> response = objectMapper.readValue(
+                result.getResponse().getContentAsString(), new TypeReference<>() {
+            });
+
+            assertNotNull(response.getErrors());
+            assertNull(response.getData());
+        });
+    }
+
+    @Test
+    void deleteFailedInvalidToken() throws Exception {
+        mockMvc.perform(
+            delete("/api/contacts/" + contact.getId())
+                .accept(MediaType.APPLICATION_JSON)
+                .header("X-API-TOKEN", "invalidtoken")
+        ).andExpectAll(
+            status().isUnauthorized()
+        ).andDo(result -> {
+            WebResponse<String> response = objectMapper.readValue(
+                result.getResponse().getContentAsString(), new TypeReference<>() {
+            });
+
+            assertNotNull(response.getErrors());
+            assertNull(response.getData());
+        });
+    }
+
+    @Test
+    void deleteFailedNoHeader() throws Exception {
+        mockMvc.perform(
+            delete("/api/contacts/" + contact.getId())
+                .accept(MediaType.APPLICATION_JSON)
+        ).andExpectAll(
+            status().isUnauthorized()
+        ).andDo(result -> {
+            WebResponse<String> response = objectMapper.readValue(
+                result.getResponse().getContentAsString(), new TypeReference<>() {
+            });
+
+            assertNotNull(response.getErrors());
+            assertNull(response.getData());
+        });
+    }
 }
