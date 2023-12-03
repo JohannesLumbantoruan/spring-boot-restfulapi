@@ -86,4 +86,26 @@ public class ContactService {
 
         return contact;
     }
+
+    public ContactResponse update(User user, String id, ContactRequest request) {
+        validationService.validate(request);
+
+        Contact contact = contactRepository.findByUserUsernameAndId(user.getUsername(), id)
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "contact not found"));
+
+        contact.setFirstName(request.getFirstName());
+        contact.setLastName(request.getLastName());
+        contact.setEmail(request.getEmail());
+        contact.setPhone(request.getPhone());
+
+        contactRepository.save(contact);
+
+        return ContactResponse
+            .builder()
+            .firstName(contact.getFirstName())
+            .lastName(contact.getLastName())
+            .email(contact.getEmail())
+            .phone(contact.getPhone())
+            .build();
+    }
 }
