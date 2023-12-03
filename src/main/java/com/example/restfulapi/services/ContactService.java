@@ -108,4 +108,12 @@ public class ContactService {
             .phone(contact.getPhone())
             .build();
     }
+
+    public void delete(User user, String contactId) {
+        if (contactRepository.existsById(contactId)) {
+            contactRepository.deleteById(contactId);
+        } else {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "contact tidak ditemukan");
+        }
+    }
 }

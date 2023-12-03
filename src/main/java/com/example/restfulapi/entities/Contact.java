@@ -36,14 +36,13 @@ public class Contact {
 
     private String lastName;
 
-    @ManyToOne(cascade = CascadeType.ALL)
+    @ManyToOne()
     @JoinColumn(
         name = "username",
         referencedColumnName = "username",
         nullable = false,
         foreignKey = @ForeignKey(name = "fkey_contacts_users")
     )
-    @OnDelete(action = OnDeleteAction.CASCADE)
     @JsonBackReference
     private User user;
 
