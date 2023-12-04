@@ -3,6 +3,8 @@ package com.example.restfulapi.controllers;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -104,17 +106,18 @@ public class ContactController {
         path = "/api/contacts/search",
         produces = MediaType.APPLICATION_JSON_VALUE
     )
-    public WebResponse<List<Contact>> search(
+    public WebResponse<Page<Contact>> search(
         User user,
         @RequestParam(name = "id", required = false) String id,
         @RequestParam(name = "firstName", required = false) String firstName,
         @RequestParam(name = "lastName", required = false) String lastName,
         @RequestParam(name = "email", required = false) String email,
-        @RequestParam(name = "phone", required = false) String phone
+        @RequestParam(name = "phone", required = false) String phone,
+        @RequestParam("page") int page
     ) {
-        // List<Contact> contacts = contactRepository.findContactsByAttributes(id, firstName, lastName, email, phone);
-        List<Contact> contacts = contactRepository.findContactsByAttributes(id, firstName, lastName, email, phone);
+        Page<Contact> contacts = contactRepository.findContactsByAttributes(
+            id, firstName, lastName, email, phone, PageRequest.of((page - 1), 5));
 
-        return WebResponse.<List<Contact>>builder().data(contacts).build();
+        return WebResponse.<Page<Contact>>builder().data(contacts).build();
     }
 }
