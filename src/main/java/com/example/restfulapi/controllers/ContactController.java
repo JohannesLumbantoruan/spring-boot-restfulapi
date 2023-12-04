@@ -113,10 +113,11 @@ public class ContactController {
         @RequestParam(name = "lastName", required = false) String lastName,
         @RequestParam(name = "email", required = false) String email,
         @RequestParam(name = "phone", required = false) String phone,
-        @RequestParam("page") int page
+        @RequestParam("page") int page,
+        @RequestParam("size") int size
     ) {
         Page<Contact> contacts = contactRepository.findContactsByAttributes(
-            id, firstName, lastName, email, phone, PageRequest.of((page - 1), 5));
+            id, firstName, lastName, email, phone, PageRequest.of((page - 1), size));
 
         return WebResponse.<Page<Contact>>builder().data(contacts).build();
     }
