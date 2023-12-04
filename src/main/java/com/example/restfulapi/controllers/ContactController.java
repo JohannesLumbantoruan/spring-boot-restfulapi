@@ -1,5 +1,7 @@
 package com.example.restfulapi.controllers;
 
+import java.util.List;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -17,10 +19,13 @@ import com.example.restfulapi.models.ContactRequest;
 import com.example.restfulapi.models.ContactResponse;
 import com.example.restfulapi.models.GetAllContactsResponse;
 import com.example.restfulapi.models.WebResponse;
+import com.example.restfulapi.repositories.ContactRepository;
 import com.example.restfulapi.services.ContactService;
 
 @RestController
 public class ContactController {
+    @Autowired
+    private ContactRepository contactRepository;
     @Autowired
     private ContactService contactService;
 
@@ -88,10 +93,28 @@ public class ContactController {
     )
     public WebResponse<String> delete(
         User user,
-        @PathVariable() String contactId
+        @PathVariable String contactId
     ) {
         contactService.delete(user, contactId);
 
         return WebResponse.<String>builder().data("Ok").build();
+    }
+
+    @GetMapping(
+        path = "/api/contacts/search",
+        produces = MediaType.APPLICATION_JSON_VALUE
+    )
+    public WebResponse<List<Contact>> search(
+        User user,
+        @RequestParam(name = "id", required = false) String id,
+        @RequestParam(name = "firstName", required = false) String firstName,
+        @RequestParam(name = "lastName", required = false) String lastName,
+        @RequestParam(name = "email", required = false) String email,
+        @RequestParam(name = "phone", required = false) String phone
+    ) {
+        // List<Contact> contacts = contactRepository.findContactsByAttributes(id, firstName, lastName, email, phone);
+        List<Contact> contacts = contactRepository.findContactsByAttributes(id, firstName, lastName, email, phone);
+
+        return WebResponse.<List<Contact>>builder().data(contacts).build();
     }
 }

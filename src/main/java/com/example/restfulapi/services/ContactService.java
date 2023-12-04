@@ -87,6 +87,7 @@ public class ContactService {
         return contact;
     }
 
+    @Transactional
     public ContactResponse update(User user, String id, ContactRequest request) {
         validationService.validate(request);
 
@@ -109,11 +110,12 @@ public class ContactService {
             .build();
     }
 
+    @Transactional
     public void delete(User user, String contactId) {
-        if (contactRepository.existsById(contactId)) {
-            contactRepository.deleteById(contactId);
+        if (contactRepository.existsByUserUsernameAndId(user.getUsername(), contactId)) {
+            contactRepository.deleteByUserUsernameAndId(user.getUsername(), contactId);
         } else {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "contact tidak ditemukan");
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "contact not found");
         }
     }
 }

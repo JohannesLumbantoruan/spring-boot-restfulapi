@@ -32,7 +32,6 @@ public class Address {
         nullable = false,
         referencedColumnName = "id"
     )
-    @OnDelete(action = OnDeleteAction.CASCADE)
     private Contact contact;
 
     private String street;
