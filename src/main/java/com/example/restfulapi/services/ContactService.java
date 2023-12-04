@@ -4,8 +4,12 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
@@ -16,6 +20,7 @@ import com.example.restfulapi.models.ContactRequest;
 import com.example.restfulapi.models.ContactResponse;
 import com.example.restfulapi.models.GetAllContactsResponse;
 import com.example.restfulapi.repositories.ContactRepository;
+import com.example.restfulapi.utils.ResponsePageImpl;
 
 import jakarta.transaction.Transactional;
 
@@ -117,5 +122,32 @@ public class ContactService {
         } else {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "contact not found");
         }
+    }
+
+    public Page<ContactResponse> search(
+        User user, String id, String firstName,
+        String lastName, String email, String phone,
+        int page, int size
+    ) {
+        Page<Contact> contacts = contactRepository.findContactsByAttributes(
+            user, id, firstName, lastName, email, phone, PageRequest.of((page - 1), size)
+        );
+
+        List<ContactResponse> contactsResponse = contacts
+            .getContent()
+            .stream()
+            .map(
+                contact -> ContactResponse
+                    .builder()
+                    .id(contact.getId())
+                    .firstName(contact.getFirstName())
+                    .lastName(contact.getLastName())
+                    .email(contact.getEmail())
+                    .phone(contact.getPhone())
+                    .build()
+            )
+            .collect(Collectors.toList());
+
+        return new PageImpl<>(contactsResponse, contacts.getPageable(), contacts.getTotalElements());
     }
 }

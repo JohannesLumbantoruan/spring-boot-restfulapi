@@ -7,7 +7,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.*;
 
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,6 +23,7 @@ import com.example.restfulapi.models.GetAllContactsResponse;
 import com.example.restfulapi.models.WebResponse;
 import com.example.restfulapi.repositories.ContactRepository;
 import com.example.restfulapi.repositories.UserRepository;
+import com.example.restfulapi.utils.ResponsePageImpl;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -513,6 +513,98 @@ public class ContactControllerTest {
 
             assertNotNull(response.getErrors());
             assertNull(response.getData());
+        });
+    }
+
+    @Test
+    void searchSuccess() throws Exception {
+        for (int i = 0; i < 100; i++) {
+            Contact c = new Contact();
+            c.setId("" + i);
+            c.setFirstName("John" + i);
+            c.setLastName("Doe");
+            c.setEmail("johndoe@mail.com");
+            c.setPhone("+1-2222-3333-4444");
+            c.setUser(user);
+            contactRepository.save(c);
+        }
+
+        mockMvc.perform(
+            get("/api/contacts/search")
+                .accept(MediaType.APPLICATION_JSON)
+                .header("X-API-TOKEN", user.getToken())
+                .queryParam("firstName", "john")
+        ).andExpectAll(
+            status().isOk()
+        ).andDo(result -> {
+            WebResponse<ResponsePageImpl<ContactResponse>> response = objectMapper.readValue(
+                result.getResponse().getContentAsString(), new TypeReference<>() {
+                });
+
+            assertNull(response.getErrors());
+            assertEquals(response.getData().getSize(), 5);
+            assertEquals(response.getData().getTotalElements(), 101);
+            assertEquals(response.getData().getTotalPages(), 21);
+        });
+    }
+
+    @Test
+    void searchFailedContactNotFound() throws Exception {
+        mockMvc.perform(
+            get("/api/contacts/search")
+                .accept(MediaType.APPLICATION_JSON)
+                .header("X-API-TOKEN", user.getToken())
+                .queryParam("firstName", "james")
+        ).andExpectAll(
+            status().isOk()
+        ).andDo(result -> {
+            WebResponse<ResponsePageImpl<ContactResponse>> response = objectMapper.readValue(
+                result.getResponse().getContentAsString(), new TypeReference<>() {
+                });
+
+            assertNull(response.getErrors());
+            assertEquals(response.getData().getContent().size(), 0);
+        });
+    }
+
+    @Test
+    void searchFailedInvalidToken() throws Exception {
+        mockMvc.perform(
+            get("/api/contacts/search")
+                .accept(MediaType.APPLICATION_JSON)
+                .header("X-API-TOKEN", "invalidToken")
+                .queryParam("firstName", "john")
+        ).andExpectAll(
+            status().isUnauthorized()
+        ).andDo(result -> {
+            WebResponse<String> response = objectMapper.readValue(
+                result.getResponse().getContentAsString(), new TypeReference<>() {
+                });
+
+            assertNull(response.getData());
+            assertNotNull(response.getErrors());
+        });
+    }
+
+    @Test
+    void searchFailedExpiredToken() throws Exception {
+        user.setTokenExpiredAt(System.currentTimeMillis() - (1000 * 60 * 24 * 30));
+        userRepository.save(user);
+        
+        mockMvc.perform(
+            get("/api/contacts/search")
+                .accept(MediaType.APPLICATION_JSON)
+                .header("X-API-TOKEN", user.getToken())
+                .queryParam("firstName", "john")
+        ).andExpectAll(
+            status().isUnauthorized()
+        ).andDo(result -> {
+            WebResponse<String> response = objectMapper.readValue(
+                result.getResponse().getContentAsString(), new TypeReference<>() {
+                });
+
+            assertNull(response.getData());
+            assertNotNull(response.getErrors());
         });
     }
 }

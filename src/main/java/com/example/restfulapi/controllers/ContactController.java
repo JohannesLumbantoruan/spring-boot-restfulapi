@@ -27,8 +27,6 @@ import com.example.restfulapi.services.ContactService;
 @RestController
 public class ContactController {
     @Autowired
-    private ContactRepository contactRepository;
-    @Autowired
     private ContactService contactService;
 
     @PostMapping(
@@ -106,19 +104,18 @@ public class ContactController {
         path = "/api/contacts/search",
         produces = MediaType.APPLICATION_JSON_VALUE
     )
-    public WebResponse<Page<Contact>> search(
+    public WebResponse<Page<ContactResponse>> search(
         User user,
         @RequestParam(name = "id", required = false) String id,
         @RequestParam(name = "firstName", required = false) String firstName,
         @RequestParam(name = "lastName", required = false) String lastName,
         @RequestParam(name = "email", required = false) String email,
         @RequestParam(name = "phone", required = false) String phone,
-        @RequestParam("page") int page,
-        @RequestParam("size") int size
+        @RequestParam(name = "page", defaultValue = "1") int page,
+        @RequestParam(name = "size", defaultValue = "5") int size
     ) {
-        Page<Contact> contacts = contactRepository.findContactsByAttributes(
-            id, firstName, lastName, email, phone, PageRequest.of((page - 1), size));
+        Page<ContactResponse> response = contactService.search(user, id, firstName, lastName, email, phone, page, size);
 
-        return WebResponse.<Page<Contact>>builder().data(contacts).build();
+        return WebResponse.<Page<ContactResponse>>builder().data(response).build();
     }
 }

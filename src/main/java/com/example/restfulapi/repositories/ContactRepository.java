@@ -11,6 +11,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import com.example.restfulapi.entities.Contact;
+import com.example.restfulapi.entities.User;
 
 @Repository
 public interface ContactRepository extends JpaRepository<Contact, String> {
@@ -26,6 +27,7 @@ public interface ContactRepository extends JpaRepository<Contact, String> {
     // @Entity annotation and its properties
     @Query(value =
         "SELECT c FROM Contact c WHERE "+
+        "(c.user = :user) AND"+
         "(:id IS null OR c.id LIKE %:id%) AND "+
         "(:firstName IS null OR c.firstName LIKE %:firstName%) AND "+
         "(:lastName IS null OR c.lastName LIKE %:lastName%) AND "+
@@ -33,6 +35,7 @@ public interface ContactRepository extends JpaRepository<Contact, String> {
         "(:phone IS null OR c.phone LIKE %:phone%)"
     )
     Page<Contact> findContactsByAttributes(
+        @Param("user") User user,
         @Param("id") String id,
         @Param("firstName") String firstName,
         @Param("lastName") String lastName,
