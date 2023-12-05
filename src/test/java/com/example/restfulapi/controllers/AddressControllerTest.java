@@ -6,8 +6,6 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-import java.util.List;
-
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -38,6 +36,8 @@ public class AddressControllerTest {
     private Contact contact;
 
     private AddressRequest request;
+
+    private Address address;
 
     @Autowired
     private MockMvc mockMvc;
@@ -81,6 +81,21 @@ public class AddressControllerTest {
         request.setProvince("Jawa Barat");
         request.setCountry("Indonesia");
         request.setPostalCode("41352");
+
+        address = new Address();
+        address.setId("address-12345");
+        address.setStreet("Jl. Pegangsaan Timur No. 56");
+        address.setCity("Jakarta Selatan");
+        address.setProvince("DKI Jakarta");
+        address.setCountry("Indonesia");
+        address.setPostalCode("22475");
+        address.setContact(contact);
+        addressRepository.save(address);
+    }
+
+    @AfterEach
+    void tearDown() {
+        userRepository.deleteAll();
     }
 
     @Test
@@ -107,11 +122,6 @@ public class AddressControllerTest {
             assertEquals(response.getData().getCountry(), request.getCountry());
             assertEquals(response.getData().getPostalCode(), request.getPostalCode());
         });
-    }
-
-    @AfterEach
-    void tearDown() {
-        userRepository.deleteAll();
     }
 
     @Test
@@ -232,6 +242,101 @@ public class AddressControllerTest {
             assertNull(response.getErrors());
             assertNotNull(response.getData());
             assertEquals(response.getData().getContent().size(), 10);
+        });
+    }
+
+    @Test
+    void searchSuccessWithNotExistCity() throws Exception {
+        for (int i = 0; i < 10; i++) {
+            Address address = new Address();
+            address.setId("address-" + i);
+            address.setStreet("Jl. Batik Kumeli No. 50");
+            address.setCity("Bandung");
+            address.setProvince("Jawa Barat");
+            address.setCountry("Indonesia");
+            address.setPostalCode("41352");
+            address.setContact(contact);
+
+            addressRepository.save(address);
+        }
+
+        mockMvc.perform(
+            get("/api/contacts/" + contact.getId() + "/addresses")
+                .accept(MediaType.APPLICATION_JSON)
+                .header("X-API-TOKEN", user.getToken())
+                .param("city", "med")
+                .param("size", "10")
+        ).andExpectAll(
+            status().isOk()
+        ).andDo(result -> {
+            WebResponse<ResponsePageImpl<AddressResponse>> response = objectMapper.readValue(
+                result.getResponse().getContentAsString(), new TypeReference<>() {
+                }
+            );
+
+            assertNull(response.getErrors());
+            assertNotNull(response.getData());
+            assertEquals(response.getData().getContent().size(), 0);
+        });
+    }
+
+    @Test
+    void searchFailedTokenExpired() throws Exception {
+        user.setTokenExpiredAt(System.currentTimeMillis() - (1000 * 60 * 24 * 30));
+        userRepository.save(user);
+
+        mockMvc.perform(
+            get("/api/contacts/" + contact.getId() + "/addresses")
+                .accept(MediaType.APPLICATION_JSON)
+                .header("X-API-TOKEN", user.getToken())
+        ).andExpectAll(
+            status().isUnauthorized()
+        ).andDo(result -> {
+            WebResponse<ResponsePageImpl<AddressResponse>> response = objectMapper.readValue(
+                result.getResponse().getContentAsString(), new TypeReference<>() {
+                }
+            );
+
+            assertNull(response.getData());
+            assertNotNull(response.getErrors());
+        });
+    }
+
+    @Test
+    void searchFailedTokenInvalid() throws Exception {        
+        mockMvc.perform(
+            get("/api/contacts/" + contact.getId() + "/addresses")
+                .accept(MediaType.APPLICATION_JSON)
+                .header("X-API-TOKEN", "invalidtoken")
+        ).andExpectAll(
+            status().isUnauthorized()
+        ).andDo(result -> {
+            WebResponse<ResponsePageImpl<AddressResponse>> response = objectMapper.readValue(
+                result.getResponse().getContentAsString(), new TypeReference<>() {
+                }
+            );
+
+            assertNull(response.getData());
+            assertNotNull(response.getErrors());
+        });
+    }
+
+    @Test
+    void searchFailedContactNotFound() throws Exception {        
+        mockMvc.perform(
+            get("/api/contacts/contact-notfound/addresses")
+                .accept(MediaType.APPLICATION_JSON)
+                .header("X-API-TOKEN", user.getToken())
+        ).andExpectAll(
+            status().isNotFound()
+        ).andDo(result -> {
+            WebResponse<ResponsePageImpl<AddressResponse>> response = objectMapper.readValue(
+                result.getResponse().getContentAsString(), new TypeReference<>() {
+                }
+            );
+
+            assertNull(response.getData());
+            assertNotNull(response.getErrors());
         });
     }
 }
