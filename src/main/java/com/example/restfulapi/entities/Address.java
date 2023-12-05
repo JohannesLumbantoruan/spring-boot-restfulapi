@@ -36,6 +36,8 @@ public class Address {
 
     private String street;
 
+    private String city;
+
     private String province;
 
     @Column(nullable = false)
