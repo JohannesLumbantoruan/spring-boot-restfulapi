@@ -21,7 +21,6 @@ import com.example.restfulapi.models.ContactRequest;
 import com.example.restfulapi.models.ContactResponse;
 import com.example.restfulapi.models.GetAllContactsResponse;
 import com.example.restfulapi.models.WebResponse;
-import com.example.restfulapi.repositories.ContactRepository;
 import com.example.restfulapi.services.ContactService;
 
 @RestController

@@ -6,6 +6,9 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
+import java.util.List;
+
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,6 +17,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
+import com.example.restfulapi.entities.Address;
 import com.example.restfulapi.entities.Contact;
 import com.example.restfulapi.entities.User;
 import com.example.restfulapi.models.AddressRequest;
@@ -104,6 +108,11 @@ public class AddressControllerTest {
         });
     }
 
+    @AfterEach
+    void tearDown() {
+        userRepository.deleteAll();
+    }
+
     @Test
     void postFailedCountryFieldEmpty() throws Exception {
         AddressRequest request = new AddressRequest();
@@ -167,6 +176,59 @@ public class AddressControllerTest {
 
             assertNull(response.getData());
             assertNotNull(response.getErrors());
+        });
+    }
+
+    @Test
+    void postFailedInvalidToken() throws Exception {
+        mockMvc.perform(
+            post("/api/contacts/" + contact.getId() + "/addresses")
+                .accept(MediaType.APPLICATION_JSON)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request))
+                .header("X-API-TOKEN", "invalidtoken")
+        ).andExpectAll(
+            status().isUnauthorized()
+        ).andDo(result -> {
+            WebResponse<String> response = objectMapper.readValue(
+                result.getResponse().getContentAsString(), new TypeReference<>() {
+                });
+
+            assertNull(response.getData());
+            assertNotNull(response.getErrors());
+        });
+    }
+
+    @Test
+    void getAllSuccess() throws Exception {
+        for (int i = 0; i < 10; i++) {
+            Address address = new Address();
+            address.setId("address-" + i);
+            address.setStreet("Jl. Batik Kumeli No. 50");
+            address.setCity("Bandung");
+            address.setProvince("Jawa Barat");
+            address.setCountry("Indonesia");
+            address.setPostalCode("41352");
+            address.setContact(contact);
+
+            addressRepository.save(address);
+        }
+
+        mockMvc.perform(
+            get("/api/contacts/" + contact.getId() + "/addresses")
+                .accept(MediaType.APPLICATION_JSON)
+                .header("X-API-TOKEN", user.getToken())
+        ).andExpectAll(
+            status().isOk()
+        ).andDo(result -> {
+            WebResponse<List<AddressResponse>> response = objectMapper.readValue(
+                result.getResponse().getContentAsString(), new TypeReference<>() {
+                }
+            );
+
+            assertNull(response.getErrors());
+            assertNotNull(response.getData());
+            assertEquals(response.getData().size(), 10);
         });
     }
 }

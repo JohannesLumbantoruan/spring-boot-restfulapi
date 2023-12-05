@@ -1,7 +1,10 @@
 package com.example.restfulapi.controllers;
 
+import java.util.List;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -31,5 +34,18 @@ public class AddressController {
         AddressResponse address = addressService.post(contactId, request);
 
         return WebResponse.<AddressResponse>builder().data(address).build();
+    }
+
+    @GetMapping(
+        path = "/api/contacts/{contactId}/addresses",
+        produces = MediaType.APPLICATION_JSON_VALUE
+    )
+    public WebResponse<List<AddressResponse>> getAll(
+        User user,
+        @PathVariable String contactId
+    ) {
+        List<AddressResponse> response = addressService.getAll(user, contactId);
+
+        return WebResponse.<List<AddressResponse>>builder().data(response).build();
     }
 }

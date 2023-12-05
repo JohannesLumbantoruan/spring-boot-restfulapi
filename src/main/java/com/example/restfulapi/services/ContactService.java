@@ -20,7 +20,6 @@ import com.example.restfulapi.models.ContactRequest;
 import com.example.restfulapi.models.ContactResponse;
 import com.example.restfulapi.models.GetAllContactsResponse;
 import com.example.restfulapi.repositories.ContactRepository;
-import com.example.restfulapi.utils.ResponsePageImpl;
 
 import jakarta.transaction.Transactional;
 
@@ -53,6 +52,7 @@ public class ContactService {
             .lastName(contact.getLastName())
             .email(contact.getEmail())
             .phone(contact.getPhone())
+            .addresses(new ArrayList<String>())
             .build();
     }
 
@@ -77,12 +77,33 @@ public class ContactService {
             }
         }
 
+        List<ContactResponse> contactResponses = contacts
+            .stream()
+            .map(contact -> {
+                List<String> addresses = contact
+                    .getAddress()
+                    .stream()
+                    .map(address -> address.getId())
+                    .collect(Collectors.toList());
+
+                return ContactResponse
+                    .builder()
+                    .id(contact.getId())
+                    .firstName(contact.getFirstName())
+                    .lastName(contact.getLastName())
+                    .email(contact.getEmail())
+                    .phone(contact.getPhone())
+                    .addresses(addresses)
+                    .build();
+            })
+            .collect(Collectors.toList());
+
         page.put("number", pageNumber);
         page.put("size", contacts.size());
         page.put("totalPages", (int)Math.ceil(total / 5.0));
         page.put("totalSize", total);
 
-        return GetAllContactsResponse.builder().content(contacts).page(page).build();
+        return GetAllContactsResponse.builder().content(contactResponses).page(page).build();
     }
 
     public Contact getById(User user, String id) {
@@ -106,12 +127,18 @@ public class ContactService {
 
         contactRepository.save(contact);
 
+        List<String> addresses = contact.getAddress()
+            .stream()
+            .map(address -> address.getId())
+            .collect(Collectors.toList());
+
         return ContactResponse
             .builder()
             .firstName(contact.getFirstName())
             .lastName(contact.getLastName())
             .email(contact.getEmail())
             .phone(contact.getPhone())
+            .addresses(addresses)
             .build();
     }
 
@@ -137,14 +164,22 @@ public class ContactService {
             .getContent()
             .stream()
             .map(
-                contact -> ContactResponse
-                    .builder()
-                    .id(contact.getId())
-                    .firstName(contact.getFirstName())
-                    .lastName(contact.getLastName())
-                    .email(contact.getEmail())
-                    .phone(contact.getPhone())
-                    .build()
+                contact -> {
+                    List<String> addresses = contact.getAddress()
+                        .stream()
+                        .map(address -> address.getId())
+                        .collect(Collectors.toList());
+
+                    return ContactResponse
+                        .builder()
+                        .id(contact.getId())
+                        .firstName(contact.getFirstName())
+                        .lastName(contact.getLastName())
+                        .email(contact.getEmail())
+                        .phone(contact.getPhone())
+                        .addresses(addresses)
+                        .build();
+                }
             )
             .collect(Collectors.toList());
 

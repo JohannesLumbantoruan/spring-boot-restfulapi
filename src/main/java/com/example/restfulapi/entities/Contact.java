@@ -6,6 +6,7 @@ import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
 
 import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
@@ -51,5 +52,6 @@ public class Contact {
     private String email;
 
     @OneToMany(mappedBy = "contact", cascade = CascadeType.ALL)
+    @JsonManagedReference
     private List<Address> address;
 }

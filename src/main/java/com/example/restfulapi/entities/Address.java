@@ -1,9 +1,7 @@
 package com.example.restfulapi.entities;
 
-import org.hibernate.annotations.OnDelete;
-import org.hibernate.annotations.OnDeleteAction;
+import com.fasterxml.jackson.annotation.JsonBackReference;
 
-import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.ForeignKey;
@@ -32,6 +30,7 @@ public class Address {
         nullable = false,
         referencedColumnName = "id"
     )
+    @JsonBackReference
     private Contact contact;
 
     private String street;

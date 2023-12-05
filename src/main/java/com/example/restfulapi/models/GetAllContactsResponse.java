@@ -3,8 +3,6 @@ package com.example.restfulapi.models;
 import java.util.List;
 import java.util.Map;
 
-import com.example.restfulapi.entities.Contact;
-
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -15,7 +13,7 @@ import lombok.NoArgsConstructor;
 @Data
 @Builder
 public class GetAllContactsResponse {
-    private List<Contact> content;
+    private List<ContactResponse> content;
 
     private Map<String, Integer> page;
 }
