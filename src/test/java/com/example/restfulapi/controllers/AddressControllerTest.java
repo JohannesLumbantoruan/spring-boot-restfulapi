@@ -26,6 +26,7 @@ import com.example.restfulapi.models.WebResponse;
 import com.example.restfulapi.repositories.AddressRepository;
 import com.example.restfulapi.repositories.ContactRepository;
 import com.example.restfulapi.repositories.UserRepository;
+import com.example.restfulapi.utils.ResponsePageImpl;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -200,7 +201,7 @@ public class AddressControllerTest {
     }
 
     @Test
-    void getAllSuccess() throws Exception {
+    void searchSuccess() throws Exception {
         for (int i = 0; i < 10; i++) {
             Address address = new Address();
             address.setId("address-" + i);
@@ -218,17 +219,19 @@ public class AddressControllerTest {
             get("/api/contacts/" + contact.getId() + "/addresses")
                 .accept(MediaType.APPLICATION_JSON)
                 .header("X-API-TOKEN", user.getToken())
+                .param("city", "andu")
+                .param("size", "10")
         ).andExpectAll(
             status().isOk()
         ).andDo(result -> {
-            WebResponse<List<AddressResponse>> response = objectMapper.readValue(
+            WebResponse<ResponsePageImpl<AddressResponse>> response = objectMapper.readValue(
                 result.getResponse().getContentAsString(), new TypeReference<>() {
                 }
             );
 
             assertNull(response.getErrors());
             assertNotNull(response.getData());
-            assertEquals(response.getData().size(), 10);
+            assertEquals(response.getData().getContent().size(), 10);
         });
     }
 }

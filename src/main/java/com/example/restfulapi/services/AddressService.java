@@ -5,6 +5,9 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
@@ -59,13 +62,20 @@ public class AddressService {
             .build();
     }
 
-    public List<AddressResponse> getAll(User user, String contactId) {
-        contactRepository.findByUserUsernameAndId(user.getUsername(), contactId)
+    public Page<AddressResponse> search(
+        User user, String contactId, String id, 
+        String street, String city, String province, 
+        String country, String postalCode, int page,
+        int size
+    ) {
+        Contact contact = contactRepository.findByUserUsernameAndId(user.getUsername(), contactId)
             .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "contact not found"));
 
-        List<Address> addresses = addressRepository.findAllByContactId(contactId);
+        Page<Address> addresses = addressRepository.findAddressesByAttributes(
+            contact, id, street, city, province, country, postalCode, PageRequest.of((page - 1), size));
 
         List<AddressResponse> addressResponses = addresses
+            .getContent()
             .stream()
             .map(
                 address -> AddressResponse
@@ -80,6 +90,6 @@ public class AddressService {
             )
             .collect(Collectors.toList());
 
-        return addressResponses;
+        return new PageImpl<>(addressResponses, addresses.getPageable(), addresses.getTotalElements());
     }
 }

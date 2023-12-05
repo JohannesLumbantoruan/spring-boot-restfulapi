@@ -3,11 +3,13 @@ package com.example.restfulapi.controllers;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.example.restfulapi.entities.User;
@@ -40,12 +42,21 @@ public class AddressController {
         path = "/api/contacts/{contactId}/addresses",
         produces = MediaType.APPLICATION_JSON_VALUE
     )
-    public WebResponse<List<AddressResponse>> getAll(
+    public WebResponse<Page<AddressResponse>> getAll(
         User user,
-        @PathVariable String contactId
+        @PathVariable String contactId,
+        @RequestParam(name = "id", required = false) String id,
+        @RequestParam(name = "street", required = false) String street,
+        @RequestParam(name = "city", required = false) String city,
+        @RequestParam(name = "province", required = false) String province,
+        @RequestParam(name = "country", required = false) String country,
+        @RequestParam(name = "postalCode", required = false) String postalCode,
+        @RequestParam(name = "page", defaultValue = "1") int page,
+        @RequestParam(name = "size", defaultValue = "5") int size
     ) {
-        List<AddressResponse> response = addressService.getAll(user, contactId);
+        Page<AddressResponse> response = addressService.search(
+            user, contactId, id, street, city, province, country, postalCode, page, size);
 
-        return WebResponse.<List<AddressResponse>>builder().data(response).build();
+        return WebResponse.<Page<AddressResponse>>builder().data(response).build();
     }
 }
