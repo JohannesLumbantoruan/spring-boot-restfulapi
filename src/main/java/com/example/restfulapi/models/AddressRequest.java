@@ -26,5 +26,5 @@ public class AddressRequest {
     private String country;
 
     @Size(max = 100)
-    private String postaclCode;
+    private String postalCode;
 }

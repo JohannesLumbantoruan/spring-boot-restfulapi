@@ -40,7 +40,7 @@ public class AddressService {
         address.setCity(request.getCity());
         address.setProvince(request.getProvince());
         address.setCountry(request.getCountry());
-        address.setPostalCode(request.getPostaclCode());
+        address.setPostalCode(request.getPostalCode());
         address.setContact(contact);
 
         addressRepository.save(address);
