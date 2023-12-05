@@ -8,10 +8,12 @@ import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.example.restfulapi.entities.Address;
 import com.example.restfulapi.entities.User;
 import com.example.restfulapi.models.AddressRequest;
 import com.example.restfulapi.models.AddressResponse;
@@ -58,5 +60,35 @@ public class AddressController {
             user, contactId, id, street, city, province, country, postalCode, page, size);
 
         return WebResponse.<Page<AddressResponse>>builder().data(response).build();
+    }
+
+    @GetMapping(
+        path = "/api/contacts/{contactId}/addresses/{addressId}",
+        produces = MediaType.APPLICATION_JSON_VALUE
+    )
+    public WebResponse<Address> get(
+        User user,
+        @PathVariable("contactId") String contactId,
+        @PathVariable("addressId") String addressId
+    ) {
+        Address address = addressService.get(user, contactId, addressId);
+
+        return WebResponse.<Address>builder().data(address).build();
+    }
+
+    @PutMapping(
+        path = "/api/contacts/{contactId}/addresses/{addressId}",
+        consumes = MediaType.APPLICATION_JSON_VALUE,
+        produces = MediaType.APPLICATION_JSON_VALUE
+    )
+    public WebResponse<AddressResponse> update(
+        User user,
+        @PathVariable("contactId") String contactId,
+        @PathVariable("addressId") String addressId,
+        @RequestBody AddressRequest request
+    ) {
+        AddressResponse response = addressService.update(user, contactId, addressId, request);
+
+        return WebResponse.<AddressResponse>builder().data(response).build();
     }
 }

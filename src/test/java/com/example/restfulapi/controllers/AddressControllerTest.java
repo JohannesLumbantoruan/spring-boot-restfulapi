@@ -39,6 +39,8 @@ public class AddressControllerTest {
 
     private Address address;
 
+    private AddressRequest updateRequest;
+
     @Autowired
     private MockMvc mockMvc;
 
@@ -91,6 +93,13 @@ public class AddressControllerTest {
         address.setPostalCode("22475");
         address.setContact(contact);
         addressRepository.save(address);
+
+        updateRequest = new AddressRequest();
+        updateRequest.setStreet("Jl. Pegangsaan Timur No. 56");
+        updateRequest.setCity("Jakarta Selatan");
+        updateRequest.setProvince("DKI Jakarta");
+        updateRequest.setCountry("Indonesia");
+        updateRequest.setPostalCode("22475");
     }
 
     @AfterEach
@@ -335,6 +344,170 @@ public class AddressControllerTest {
                 }
             );
 
+            assertNull(response.getData());
+            assertNotNull(response.getErrors());
+        });
+    }
+
+    @Test
+    void getSuccess() throws Exception {
+        mockMvc.perform(
+            get("/api/contacts/"+ contact.getId() +"/addresses/" + address.getId())
+                .accept(MediaType.APPLICATION_JSON)
+                .header("X-API-TOKEN", user.getToken())
+        ).andExpectAll(
+            status().isOk()
+        ).andDo(result -> {
+            WebResponse<Address> response = objectMapper.readValue(
+                result.getResponse().getContentAsString(), new TypeReference<>() {
+                });
+
+            assertNull(response.getErrors());
+            assertNotNull(response.getData());
+            assertEquals(response.getData().getId(), "address-12345");
+        });
+    }
+
+    @Test
+    void getFailedContactNotFound() throws Exception {
+        mockMvc.perform(
+            get("/api/contacts/contact-notfound/addresses/" + address.getId())
+                .accept(MediaType.APPLICATION_JSON)
+                .header("X-API-TOKEN", user.getToken())
+        ).andExpectAll(
+            status().isNotFound()
+        ).andDo(result -> {
+            WebResponse<Address> response = objectMapper.readValue(
+                result.getResponse().getContentAsString(), new TypeReference<>() {
+                });
+
+            assertNull(response.getData());
+            assertNotNull(response.getErrors());
+        });
+    }
+
+    @Test
+    void getFailedAddressNotFound() throws Exception {
+        mockMvc.perform(
+            get("/api/contacts/"+ contact.getId() +"/addresses/address-notfound")
+                .accept(MediaType.APPLICATION_JSON)
+                .header("X-API-TOKEN", user.getToken())
+        ).andExpectAll(
+            status().isNotFound()
+        ).andDo(result -> {
+            WebResponse<Address> response = objectMapper.readValue(
+                result.getResponse().getContentAsString(), new TypeReference<>() {
+                });
+
+            assertNull(response.getData());
+            assertNotNull(response.getErrors());
+        });
+    }
+
+    @Test
+    void updateSuccess() throws Exception {
+        mockMvc.perform(
+            put("/api/contacts/"+ contact.getId() +"/addresses/"+ address.getId())
+                .accept(MediaType.APPLICATION_JSON)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(updateRequest))
+                .header("X-API-TOKEN", user.getToken())
+        ).andExpectAll(
+            status().isOk()
+        ).andDo(result -> {
+            WebResponse<AddressResponse> response = objectMapper.readValue(
+                result.getResponse().getContentAsString(), new TypeReference<>() {
+                });
+            
+            assertNull(response.getErrors());
+            assertNotNull(response.getData());
+            assertEquals(response.getData().getId(), address.getId());
+            assertEquals(response.getData().getStreet(), updateRequest.getStreet());
+            assertEquals(response.getData().getCity(), updateRequest.getCity());
+            assertEquals(response.getData().getProvince(), updateRequest.getProvince());
+            assertEquals(response.getData().getCountry(), updateRequest.getCountry());
+            assertEquals(response.getData().getPostalCode(), updateRequest.getPostalCode());
+        });
+    }
+
+    @Test
+    void updateFailedContactNotFound() throws Exception {
+        mockMvc.perform(
+            put("/api/contacts/contact-notfound/addresses/"+ address.getId())
+                .accept(MediaType.APPLICATION_JSON)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(updateRequest))
+                .header("X-API-TOKEN", user.getToken())
+        ).andExpectAll(
+            status().isNotFound()
+        ).andDo(result -> {
+            WebResponse<AddressResponse> response = objectMapper.readValue(
+                result.getResponse().getContentAsString(), new TypeReference<>() {
+                });
+            
+            assertNull(response.getData());
+            assertNotNull(response.getErrors());
+        });
+    }
+
+    @Test
+    void updateFailedAddressNotFound() throws Exception {
+        mockMvc.perform(
+            put("/api/contacts/"+ contact.getId() +"/addresses/address-notfound")
+                .accept(MediaType.APPLICATION_JSON)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(updateRequest))
+                .header("X-API-TOKEN", user.getToken())
+        ).andExpectAll(
+            status().isNotFound()
+        ).andDo(result -> {
+            WebResponse<AddressResponse> response = objectMapper.readValue(
+                result.getResponse().getContentAsString(), new TypeReference<>() {
+                });
+            
+            assertNull(response.getData());
+            assertNotNull(response.getErrors());
+        });
+    }
+
+    @Test
+    void updateFailedInvalidToken() throws Exception {
+        mockMvc.perform(
+            put("/api/contacts/"+ contact.getId() +"/addresses/" + address.getId())
+                .accept(MediaType.APPLICATION_JSON)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(updateRequest))
+                .header("X-API-TOKEN", "invalidtoken")
+        ).andExpectAll(
+            status().isUnauthorized()
+        ).andDo(result -> {
+            WebResponse<AddressResponse> response = objectMapper.readValue(
+                result.getResponse().getContentAsString(), new TypeReference<>() {
+                });
+            
+            assertNull(response.getData());
+            assertNotNull(response.getErrors());
+        });
+    }
+
+    @Test
+    void updateFailedTokenExpired() throws Exception {
+        user.setTokenExpiredAt(System.currentTimeMillis() - (1000 * 60 * 24 * 30));
+        userRepository.save(user);
+
+        mockMvc.perform(
+            put("/api/contacts/"+ contact.getId() +"/addresses/" + address.getId())
+                .accept(MediaType.APPLICATION_JSON)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(updateRequest))
+                .header("X-API-TOKEN", user.getToken())
+        ).andExpectAll(
+            status().isUnauthorized()
+        ).andDo(result -> {
+            WebResponse<AddressResponse> response = objectMapper.readValue(
+                result.getResponse().getContentAsString(), new TypeReference<>() {
+                });
+            
             assertNull(response.getData());
             assertNotNull(response.getErrors());
         });

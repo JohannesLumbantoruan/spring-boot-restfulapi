@@ -1,6 +1,7 @@
 package com.example.restfulapi.repositories;
 
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -14,7 +15,7 @@ import com.example.restfulapi.entities.Contact;
 
 @Repository
 public interface AddressRepository extends JpaRepository<Address, String> {
-    // Page<Address> findAllByContactId(String contactId, Pageable pageable);
+    Optional<Address> findByContactIdAndId(String contactId, String addressId);
 
     @Query(
         "SELECT a FROM Address a WHERE "+
