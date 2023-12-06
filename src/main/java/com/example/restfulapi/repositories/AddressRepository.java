@@ -37,4 +37,6 @@ public interface AddressRepository extends JpaRepository<Address, String> {
         @Param("postalCode") String postalCode,
         Pageable pageable
     );
+
+    boolean existsByContactIdAndId(String contactId, String addressId);
 }

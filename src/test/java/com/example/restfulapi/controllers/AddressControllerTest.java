@@ -512,4 +512,102 @@ public class AddressControllerTest {
             assertNotNull(response.getErrors());
         });
     }
+
+    @Test
+    void deleteSuccess() throws Exception {
+        mockMvc.perform(
+            delete("/api/contacts/"+ contact.getId() +"/addresses/" + address.getId())
+                .accept(MediaType.APPLICATION_JSON)
+                .header("X-API-TOKEN", user.getToken())
+        ).andExpectAll(
+            status().isOk()
+        ).andDo(result -> {
+            WebResponse<String> response = objectMapper.readValue(
+                result.getResponse().getContentAsString(), new TypeReference<>() {
+                });
+                
+            assertNull(response.getErrors());
+            assertNotNull(response.getData());
+            assertEquals(response.getData(), "Ok");
+        });
+    }
+
+    @Test
+    void deleteContactNotFound() throws Exception {
+        mockMvc.perform(
+            delete("/api/contacts/contact-notfound/addresses/" + address.getId())
+                .accept(MediaType.APPLICATION_JSON)
+                .header("X-API-TOKEN", user.getToken())
+        ).andExpectAll(
+            status().isNotFound()
+        ).andDo(result -> {
+            WebResponse<String> response = objectMapper.readValue(
+                result.getResponse().getContentAsString(), new TypeReference<>() {
+                });
+                
+            assertNull(response.getData());
+            assertNotNull(response.getErrors());
+            assertEquals(response.getErrors(), "contact not found");
+        });
+    }
+
+    @Test
+    void deleteAddressNotFound() throws Exception {
+        mockMvc.perform(
+            delete("/api/contacts/"+ contact.getId() +"/addresses/address-notfound")
+                .accept(MediaType.APPLICATION_JSON)
+                .header("X-API-TOKEN", user.getToken())
+        ).andExpectAll(
+            status().isNotFound()
+        ).andDo(result -> {
+            WebResponse<String> response = objectMapper.readValue(
+                result.getResponse().getContentAsString(), new TypeReference<>() {
+                });
+                
+            assertNull(response.getData());
+            assertNotNull(response.getErrors());
+            assertEquals(response.getErrors(), "address not found");
+        });
+    }
+
+    @Test
+    void deleteFailedInvalidToken() throws Exception {
+        mockMvc.perform(
+            delete("/api/contacts/"+ contact.getId() +"/addresses/"+ address.getId())
+                .accept(MediaType.APPLICATION_JSON)
+                .header("X-API-TOKEN", "invalidtoken")
+        ).andExpectAll(
+            status().isUnauthorized()
+        ).andDo(result -> {
+            WebResponse<String> response = objectMapper.readValue(
+                result.getResponse().getContentAsString(), new TypeReference<>() {
+                });
+                
+            assertNull(response.getData());
+            assertNotNull(response.getErrors());
+            assertEquals(response.getErrors(), "Unauthorized");
+        });
+    }
+
+    @Test
+    void deleteFailedExpiredToken() throws Exception {
+        user.setTokenExpiredAt(System.currentTimeMillis() - (1000 * 60 * 24 * 30));
+        userRepository.save(user);
+
+        mockMvc.perform(
+            delete("/api/contacts/"+ contact.getId() +"/addresses/"+ address.getId())
+                .accept(MediaType.APPLICATION_JSON)
+                .header("X-API-TOKEN", user.getToken())
+        ).andExpectAll(
+            status().isUnauthorized()
+        ).andDo(result -> {
+            WebResponse<String> response = objectMapper.readValue(
+                result.getResponse().getContentAsString(), new TypeReference<>() {
+                });
+                
+            assertNull(response.getData());
+            assertNotNull(response.getErrors());
+            assertEquals(response.getErrors(), "token expired");
+        });
+    }
 }

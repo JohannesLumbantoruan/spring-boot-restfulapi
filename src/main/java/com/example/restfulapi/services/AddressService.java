@@ -127,4 +127,15 @@ public class AddressService {
             .postalCode(address.getPostalCode())
             .build();
     }
+
+    public void delete(User user, String contactId, String addressId) {
+        contactRepository.findByUserUsernameAndId(user.getUsername(), contactId)
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "contact not found"));
+
+        if (addressRepository.existsByContactIdAndId(contactId, addressId)) {
+            addressRepository.deleteById(addressId);
+        } else {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "address not found");
+        }
+    }
 }
